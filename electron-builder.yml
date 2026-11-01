@@ -1,0 +1,36 @@
+appId: app.tandai.tuntas
+productName: Tandai Tuntas
+artifactName: Tandai-Tuntas-${version}-${os}-${arch}.${ext}
+directories:
+  app: work/desktop-app
+  output: outputs/releases
+files:
+  - '**/*'
+  - '!node_modules/**/*'
+asar: true
+npmRebuild: false
+mac:
+  identity: null
+  icon: desktop/icon.png
+  category: public.app-category.productivity
+  target:
+    - dmg
+win:
+  icon: desktop/icon.png
+  signExecutable: false
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+
+dmg:
+  contents:
+    - x: 180
+      y: 180
+      type: file
+    - x: 480
+      y: 180
+      type: link
+      path: /Applications

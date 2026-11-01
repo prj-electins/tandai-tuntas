@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `accounts_provider_email_unique` ON `accounts` (`provider`,`email`);
