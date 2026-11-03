@@ -1,0 +1,11 @@
+extends: ./electron-builder.yml
+directories:
+  output: outputs/native-release
+extraFiles:
+  - from: work/native-widget/TandaiTasks.appex
+    to: PlugIns/TandaiTasks.appex
+extraResources:
+  - from: work/native-widget/WidgetBridge
+    to: native-widget/WidgetBridge
+mac:
+  identity: null

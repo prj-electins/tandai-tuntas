@@ -1,0 +1,21 @@
+import {execFileSync} from 'node:child_process';
+import {readFileSync,readdirSync,mkdtempSync,cpSync,symlinkSync,rmSync,mkdirSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {tmpdir} from 'node:os';
+const identity=process.env.TANDAI_WIDGET_SIGN_IDENTITY;
+if(process.platform!=='darwin'||!identity)throw Error('Mac dan TANDAI_WIDGET_SIGN_IDENTITY diperlukan.');
+const run=(cmd,args)=>execFileSync(cmd,args,{stdio:'inherit'});
+run(process.execPath,['scripts/build-macos-widget.mjs']);
+run(process.execPath,['scripts/build-desktop.mjs']);
+const buildRoot=mkdtempSync(resolve('work/native-packaging-'));
+run(process.execPath,['node_modules/electron-builder/cli.js','--config','electron-builder.widget.yml','--config.directories.output='+buildRoot,'--mac','--arm64','--dir','--publish','never']);
+const app=join(buildRoot,'mac-arm64/Tandai Tuntas.app');
+const frameworks=join(app,'Contents/Frameworks');
+for(const name of readdirSync(frameworks).filter(n=>n.endsWith('.framework')||n.endsWith('.app')))run('codesign',['--force','--sign',identity,join(frameworks,name)]);
+run('codesign',['--force','--sign',identity,'--entitlements','work/native-widget/widget.entitlements',join(app,'Contents/PlugIns/TandaiTasks.appex')]);
+run('codesign',['--force','--sign',identity,app]);run('codesign',['--verify','--deep','--strict',app]);
+const version=JSON.parse(readFileSync('package.json','utf8')).version;
+const output=resolve(`outputs/native-release/Tandai-Tuntas-${version}-mac-arm64-widget-preview.dmg`);
+// Build the DMG from the already signed app; shared config places both icons on the arrow axis.
+run(process.execPath,['node_modules/electron-builder/cli.js','--config','electron-builder.widget.yml','--mac','--arm64','--publish','never','--prepackaged',app,'--config.dmg.artifactName='+`Tandai-Tuntas-${version}-mac-arm64-widget-preview.dmg`]);
+run('hdiutil',['verify',output]);console.log('Local widget preview:',output);rmSync(buildRoot,{recursive:true,force:true});

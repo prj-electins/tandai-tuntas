@@ -7,6 +7,7 @@ import {mkdirSync,cpSync,writeFileSync,readFileSync} from 'node:fs';
 const appMeta=JSON.parse(readFileSync('package.json'));const out=resolve('work/desktop-app');mkdirSync(out,{recursive:true});
 await build({configFile:false,root:resolve('desktop/ui'),plugins:[react()],resolve:{alias:{'@':resolve('.')}},css:{postcss:{plugins:[tailwind()]}},build:{outDir:resolve(out,'ui'),emptyOutDir:true}});
 await bundle({entryPoints:['desktop/server.mjs'],bundle:true,platform:'node',target:'node24',format:'cjs',outfile:resolve(out,'server.cjs'),alias:{'cloudflare:workers':resolve('desktop/env.mjs'),'@':resolve('.')}});
+cpSync('desktop/icon.png',resolve(out,'icon.png'));
 cpSync('desktop/main.cjs',resolve(out,'main.cjs'));cpSync('desktop/preload.cjs',resolve(out,'preload.cjs'));cpSync('drizzle',resolve(out,'migrations'),{recursive:true});
 writeFileSync(resolve(out,'package.json'),JSON.stringify({name:'tandai-tuntas',version:appMeta.version,description:'Tandai Tuntas — tugas dan produksi kreatif',author:'arashy dev',main:'main.cjs',dependencies:{'electron-updater':'6.8.11'}}));
 // Keep desktop dependencies small; bundle the updater while preserving Electron as an external runtime.

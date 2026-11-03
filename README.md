@@ -1,6 +1,6 @@
 # Tandai Tuntas
 
-Versi **0.2.1** · Dikembangkan oleh **arashy dev**.
+Versi **0.2.5**  · Dikembangkan oleh **arashy dev**.
 
 Ekstrak ZIP, buka folder `tandai-tuntas` di editor, lalu jalankan perintah di bawah. Source ini lengkap; `node_modules` dan hasil build dipasang/dibuat ulang. Gunakan **Node.js 24**, npm, dan Git. Tidak membutuhkan akun hosting untuk desktop.
 
@@ -38,7 +38,7 @@ npm run desktop:windows
 
 Installer berada di `outputs/releases/`. Mac berupa DMG: seret Tandai Tuntas ke Applications. Windows berupa installer NSIS EXE. Paket ini tanpa sertifikat distribusi berbayar dan tanpa notarisasi. Pemeriksaan keamanan sistem operasi tidak dilewati otomatis oleh aplikasi. Windows harus diuji pada perangkat Windows sebelum distribusi luas; build lintas platform saja tidak membuktikan seluruh perilaku Windows.
 
-SQLite desktop disimpan melalui lokasi userData standar Electron, terpisah dari .app/.exe. Uninstall Windows dikonfigurasi mempertahankan data. Startup menghapus sesi lama agar profil perlu dibuka kembali; profil terkunci setelah 10 menit tidak aktif, saat Mac dikunci/suspend, dan saat aplikasi ditutup. Aplikasi hanya membuka HTTP loopback 127.0.0.1:42137; port tetap menjaga draft dan preferensi browser internal tetap tersedia antar-startup. Tutup aplikasi sebelum mengganti versinya. Tidak ada terminal yang perlu dijalankan pengguna.
+SQLite desktop disimpan melalui lokasi userData standar Electron, terpisah dari .app/.exe. Uninstall Windows dikonfigurasi mempertahankan data. Pilihan Tetap masuk di perangkat ini menjaga sesi hingga 30 hari, termasuk setelah aplikasi ditutup dan dibuka kembali. Keluar akun atau Kunci profil mencabut sesi. Desktop tidak lagi mengunci otomatis setelah 10 menit atau saat suspend; web lokal tetap memiliki penguncian saat tidak aktif. Kata sandi tidak disimpan sebagai teks. Aplikasi hanya membuka HTTP loopback 127.0.0.1:42137; port tetap menjaga draft dan preferensi browser internal tetap tersedia antar-startup. Tutup aplikasi sebelum mengganti versinya. Tidak ada terminal yang perlu dijalankan pengguna.
 
 Jalur rilis gratis menggunakan pembaruan manual melalui installer baru. Cadangan file database dibuat sebelum migrasi versi baru. Integrasi updater opsional disiapkan di kode untuk kanal HTTPS yang dikonfigurasi lewat TANDAI_UPDATE_URL, tetapi tidak diaktifkan pada paket gratis ini; tidak ada janji pembaruan otomatis tanpa kanal distribusi dan persyaratan platform.
 
@@ -89,3 +89,17 @@ Tes integrasi memakai database sementara. Tes desktop mencakup SQLite asli, reco
 Checkbox memakai ukuran khusus agar tidak mengikuti tinggi kolom teks. Fokus keyboard tetap terlihat; bayangan kontrol dikurangi. Tanda penyimpanan memakai centang tanpa ikon awan, dan ikut mencerminkan perubahan tugas/proyek yang belum tersimpan. Panduan memiliki lima topik dengan langkah ringkas, bisa ditutup melalui Escape, dan mengembalikan fokus ke tombol pembuka.
 
 Pengaturan memuat Tentang aplikasi: versi 0.2.1, Dikembangkan oleh arashy dev. Nomor versi desktop mengikuti package.json dan versi tampilan berasal dari lib/version.ts. Istilah tampilan memakai ruang kerja, papan, draf, dan unduh cadangan; ekspor SQL tetap tersedia melalui Pilihan lanjutan. Tombol Tambah tugas tidak ditampilkan pada halaman pengaturan.
+
+## Perubahan lokal berikutnya
+
+Tema Ikuti sistem merespons perubahan terang/gelap tanpa membuka ulang aplikasi. Profil baru memakai tema sistem secara bawaan; pilihan tema ruang kerja lama tetap dipertahankan.
+
+Desktop: buka Pengaturan → Tampilan → Buka widget tugas, atau menu Tugas di desktop. Widget berupa jendela catatan yang bisa dipindahkan, diubah ukurannya, dan dipasang selalu di depan. Pilih ruang kerja dan klik tugas untuk membuka detail di aplikasi utama. Widget hanya tersedia selama aplikasi berjalan, bukan widget bawaan macOS WidgetKit. Tutup widget dengan ×; gunakan Quit untuk keluar dari aplikasi.
+
+Widget asli macOS, proses background, dan build khusus Mac: [docs/MACOS-WIDGET.md](docs/MACOS-WIDGET.md).
+
+Pengingat harian: tugas berstatus Dikerjakan dengan tenggat hari ini mendapat satu pengingat per tugas/hari ketika aplikasi aktif dan profil terbuka. Beberapa tugas dirangkum dalam satu notifikasi; status selesai dan tenggat hari lain tidak ikut. Pengaturan tersedia di Tampilan. Notifikasi tunduk pada izin sistem operasi. Status pemeriksaan Windows: [docs/WINDOWS-TESTING.md](docs/WINDOWS-TESTING.md).
+
+## Konfigurasi hosting lokal
+
+Folder `.openai/` opsional dan tidak disertakan dalam Git atau ZIP source. Build baru memakai `hosting.config.json` untuk binding DB. Metadata deployment lokal dapat diletakkan pada `.openai/hosting.json` sebagai override. Simpan token/kredensial pada secret environment, bukan pada file konfigurasi yang di-commit. Folder `dist/.openai/` adalah hasil build, bukan source atau kredensial.

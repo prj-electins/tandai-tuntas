@@ -37,7 +37,7 @@ export async function POST(request:Request){try{
   if(first)await claimLegacy(id,'local',v.email);
   const old=await d.prepare('SELECT data FROM preferences WHERE id=?').bind('prefs:'+id).first<{data:string}>();const prefs={...(old?JSON.parse(old.data):defaultPrefs),name:v.name,workspace:v.workspace};
   await d.prepare('INSERT INTO preferences (id,data,updated_at) VALUES (?,?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at').bind('prefs:'+id,JSON.stringify(prefs),new Date().toISOString()).run();
-  const recoveryCode='TT-'+randomToken().slice(0,32).match(/.{8}/g)!.join('-');await d.prepare('INSERT INTO recoveries (account_id,hash) VALUES (?,?)').bind(id,await tokenHash(recoveryCode)).run();return respond({ok:true,recoveryCode},200,await createSession(id,request,!deviceProfile));
+  const recoveryCode='TT-'+randomToken().slice(0,32).match(/.{8}/g)!.join('-');await d.prepare('INSERT INTO recoveries (account_id,hash) VALUES (?,?)').bind(id,await tokenHash(recoveryCode)).run();return respond({ok:true,recoveryCode},200,await createSession(id,request,deviceProfile?body.remember!==false:true));
  }
  if(body.action==='login'&&!isHosted){
   const p=z.object({email:emailSchema,password:z.string().min(1).max(256),remember:z.boolean().optional()}).safeParse(body);if(!p.success)return respond({error:'Email atau kata sandi tidak sesuai.'},401);

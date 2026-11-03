@@ -9,7 +9,7 @@ export const videoSchema=z.object({id,title:short.trim().min(1),projectId:z.stri
 export const prefsSchema=z.object({name:short.trim().min(1),workspace:short.trim().min(1),theme:z.enum(['light','dark','system']),timezone:z.string().refine(t=>{try{new Intl.DateTimeFormat('id',{timeZone:t});return true}catch{return false}},'Zona waktu tidak valid'),weekStart:z.enum(['monday','sunday']),daily:z.boolean(),reminders:z.boolean()});
 export type Project=z.infer<typeof projectSchema>;export type Task=z.infer<typeof taskSchema>;export type Video=z.infer<typeof videoSchema>;export type Prefs=z.infer<typeof prefsSchema>;
 export type State={projects:Project[];tasks:Task[];videos:Video[];prefs:Prefs;initialized:boolean};
-export const defaultPrefs:Prefs={name:'Pengguna',workspace:'Workspace saya',theme:'light',timezone:'Asia/Makassar',weekStart:'monday',daily:true,reminders:true};
+export const defaultPrefs:Prefs={name:'Pengguna',workspace:'Workspace saya',theme:'system',timezone:'Asia/Makassar',weekStart:'monday',daily:true,reminders:true};
 export const uid=()=>crypto.randomUUID();
 export function today(tz='Asia/Makassar'){return new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
 export function addDays(d:string,n:number){const a=new Date(d+'T12:00:00Z');a.setUTCDate(a.getUTCDate()+n);return a.toISOString().slice(0,10)}

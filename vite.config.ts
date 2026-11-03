@@ -1,6 +1,12 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
-import hostingConfig from "./.openai/hosting.json";
+import defaultHostingConfig from "./hosting.config.json";
+import { existsSync, readFileSync } from "node:fs";
+// Optional local deployment metadata; a fresh clone needs only the public defaults.
+const localHostingPath = new URL("./.openai/hosting.json", import.meta.url);
+const hostingConfig = existsSync(localHostingPath)
+  ? { ...defaultHostingConfig, ...JSON.parse(readFileSync(localHostingPath, "utf8")) }
+  : defaultHostingConfig;
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
 import { configureToolEnvironment } from "./scripts/tool-environment.mjs";
 import { sites } from "./scripts/vite/sites-vite-plugin";

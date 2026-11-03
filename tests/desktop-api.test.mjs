@@ -18,3 +18,29 @@ test('native SQLite desktop and reliability features',async t=>{try{
  await t.test('5000-task benchmark uses indexed pages and small delta responses',async()=>{const db=runtime.database.db,stmt=db.prepare('INSERT INTO tasks (id,project_id,title,owner_id,status,due_date,data,updated_at) VALUES (?,NULL,?,?,?,?,?,?)');db.exec('BEGIN');for(let i=0;i<5000;i++){const v={...blankTask(),title:'Benchmark '+i};stmt.run(v.id,v.title,home,v.status,v.dueDate,JSON.stringify(v),new Date().toISOString());}db.exec('COMMIT');const start=performance.now(),page=await call('/api/state?paged=1&offset=0');assert.equal(page.data.tasks.length,250);assert.equal(page.data.more,true);const v={...blankTask(),title:'Delta benchmark'};const delta=await post({action:'save',entity:'tasks',value:v});assert.equal(delta.status,200);assert.ok(delta.bytes<2000);const plan=db.prepare('EXPLAIN QUERY PLAN SELECT data FROM tasks WHERE owner_id=? ORDER BY updated_at DESC,id LIMIT 250').all(home);assert.match(JSON.stringify(plan),/tasks_owner_updated_idx/);console.log(JSON.stringify({benchmarkTasks:5000,pageMs:Math.round(performance.now()-start),pageBytes:page.bytes,deltaBytes:delta.bytes}));});
  await t.test('password recovery rotates code, revokes previous session and preserves workspace data',async()=>{const old=cookie;const r=await call('/api/auth',{action:'recover-password',profileId:profile,code:recovery,newPassword:'Recovered-password-2026!'});assert.equal(r.status,200,JSON.stringify(r.data));assert.notEqual(r.data.recoveryCode,recovery);const fresh=r.cookie;cookie=old;assert.equal((await call('/api/state')).status,401);cookie=fresh;assert.equal((await call('/api/state?paged=1')).status,200);assert.equal((await call('/api/auth',{action:'recover-password',profileId:profile,code:recovery,newPassword:'Attempted-password-2026!'})).status,401);runtime.lock();assert.equal((await call('/api/state')).status,401);});
 }finally{await runtime.close();rmSync(temp,{recursive:true,force:true})}});
+
+test('remembered desktop session survives restart; explicit lock still revokes it',async()=>{
+ const directory=mkdtempSync(join(tmpdir(),'tandai-session-'));let server;
+ try{
+  const options={directory,migrations:resolve('drizzle'),assets:resolve('work/desktop-app/ui')};server=await startServer(options);
+  const response=await fetch(server.origin+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json',Origin:server.origin},body:JSON.stringify({action:'create-profile',password:pass,remember:true})});assert.equal(response.status,200);
+  const header=response.headers.get('set-cookie');assert.match(header,/Max-Age=2592000/);const saved=header.split(';')[0];
+  await server.close();server=await startServer(options);
+  const status=()=>fetch(server.origin+'/api/auth',{headers:{Cookie:saved}}).then(r=>r.json());assert.equal((await status()).authenticated,true);
+  server.lock();assert.equal((await status()).authenticated,false);
+  const temporary=await fetch(server.origin+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json',Origin:server.origin},body:JSON.stringify({action:'unlock',profileId:'local-owner',password:pass,remember:false})});assert.equal(temporary.status,200);assert.doesNotMatch(temporary.headers.get('set-cookie'),/Max-Age=/);
+ }finally{await server?.close();rmSync(directory,{recursive:true,force:true})}
+});
+
+test('daily ongoing reminders respect dates, preferences and profile ownership',async()=>{
+ const directory=mkdtempSync(join(tmpdir(),'tandai-daily-'));const s=await startServer({directory,migrations:resolve('drizzle'),assets:resolve('work/desktop-app/ui')});let token='';
+ const api=async(path,body)=>{const r=await fetch(s.origin+path,{method:body?'POST':'GET',headers:{Cookie:token,...(body?{'Content-Type':'application/json',Origin:s.origin}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]}};
+ try{token=(await api('/api/auth',{action:'create-profile',password:pass})).cookie;await api('/api/workspaces');const day=new Intl.DateTimeFormat('en-CA',{timeZone:'UTC',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  await api('/api/state',{action:'prefs',value:{...defaultPrefs,timezone:'UTC'}});
+  for(const [id,status,dueDate] of [['ongoing','doing',day],['todo','todo',day],['done','done',day],['later','doing','2099-01-01']])assert.equal((await api('/api/state',{action:'save',entity:'tasks',value:{...blankTask(),id,title:id,status,dueDate}})).status,200);
+  const result=await api('/api/reminders');assert.equal(result.status,200);assert.deepEqual(result.data.map(x=>x.id),['ongoing']);assert.equal(result.data[0].kind,'ongoing');assert.equal(result.data[0].day,day);assert.equal(result.data[0].workspaceId,'local-owner');
+  await api('/api/state',{action:'prefs',value:{...defaultPrefs,timezone:'UTC',daily:false}});assert.deepEqual((await api('/api/reminders')).data,[]);
+  await api('/api/state',{action:'prefs',value:{...defaultPrefs,timezone:'UTC'}});const previous=token;token=(await api('/api/auth',{action:'create-profile',name:'Other',password:pass})).cookie;assert.deepEqual((await api('/api/reminders')).data,[]);token=previous;assert.equal((await api('/api/reminders')).data.length,1);
+  await api('/api/state',{action:'prefs',value:{...defaultPrefs,reminders:false}});assert.deepEqual((await api('/api/reminders')).data,[]);
+ }finally{await s.close();rmSync(directory,{recursive:true,force:true})}
+});

@@ -1,6 +1,6 @@
 {
   "name": "tandai-tuntas",
-  "version": "0.2.1",
+  "version": "0.2.5",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -13,7 +13,7 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "db:init": "node scripts/local-db.mjs",
-    "test": "node --experimental-strip-types --test tests/model.test.mjs tests/request.test.mjs tests/ownership.test.mjs",
+    "test": "node --experimental-strip-types --test tests/model.test.mjs tests/request.test.mjs tests/ownership.test.mjs tests/notifications.test.mjs",
     "test:api": "node scripts/test-integration.mjs",
     "check": "tsc --noEmit",
     "db:export": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 export DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --output outputs/tandai-backup.sql",
